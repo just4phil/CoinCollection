@@ -182,6 +182,7 @@
         let currentUserId = null;
         let publicUserId = null; // UID für öffentliche Münzen-Anzeige
         let allCoinsData = []; // Speichert alle Münzdaten für die Client-Seite Suche
+        let unsubscribeCoins = null; // Unsubscribe-Funktion für Firestore Snapshot
 
         // Admin-UID aus localStorage holen oder null (wird nach dem ersten Admin-Login gespeichert)
         const ADMIN_UID_KEY = 'coin_collection_admin_uid';
@@ -629,19 +630,44 @@
          * @param {string} uid - Die Benutzer-ID.
          */
         function loadCoins(uid) {
-            if (!uid) return;
+            if (!uid) {
+                elements.loading.style.display = 'none';
+                return;
+            }
 
+            // Beende vorherigen Snapshot, falls vorhanden
+            if (unsubscribeCoins) {
+                unsubscribeCoins();
+                unsubscribeCoins = null;
+            }
+
+            console.log(`Loading coins for UID: ${uid}`);
+            const loadStartTime = Date.now();
             elements.loading.style.display = 'block';
+            
+            // Timeout: Blende Lade-Indikator nach maximal 3 Sekunden aus
+            const loadingTimeout = setTimeout(() => {
+                const elapsed = Date.now() - loadStartTime;
+                if (elements.loading.style.display !== 'none') {
+                    console.warn(`Loading timeout after ${elapsed}ms - hiding loading indicator`);
+                    elements.loading.style.display = 'none';
+                }
+            }, 3000);
+
             const collectionRef = collection(db, getCollectionPath(uid));
             // Hinweis: orderBy() wird hier vermieden, um Index-Fehler zu umgehen. Sortierung erfolgt Client-seitig.
             const q = query(collectionRef); 
 
             // onSnapshot hört auf alle Änderungen in Echtzeit
-            onSnapshot(q, (snapshot) => {
+            unsubscribeCoins = onSnapshot(q, (snapshot) => {
+                clearTimeout(loadingTimeout);
+                const loadTime = Date.now() - loadStartTime;
                 const coins = [];
                 snapshot.forEach(doc => {
                     coins.push({ id: doc.id, ...doc.data() });
                 });
+                
+                console.log(`Loaded ${coins.length} coins in ${loadTime}ms`);
                 
                 // Globale Daten speichern und nach Jahr sortieren
                 allCoinsData = coins.sort((a, b) => (b.year || 0) - (a.year || 0));
@@ -650,7 +676,9 @@
                 renderCoins(allCoinsData);
                 elements.loading.style.display = 'none';
             }, (error) => {
-                console.error("Firestore Snapshot Error:", error);
+                clearTimeout(loadingTimeout);
+                const loadTime = Date.now() - loadStartTime;
+                console.error(`Firestore Snapshot Error after ${loadTime}ms:`, error);
                 showMessage(`Fehler beim Laden der Sammlung: ${error.message}`, 'error');
                 elements.loading.style.display = 'none';
             });
