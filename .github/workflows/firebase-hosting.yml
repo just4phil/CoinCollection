@@ -3,26 +3,24 @@ on:
   push:
     branches:
       - main
+
 permissions:
-  contents:
-    read
+  contents: read
+
 jobs:
   deploy:
-    runs-on:
-      ubuntu-latest
-      steps:
-        - name: Code auschecken # Ruft die Projektdateien von GitHub ab
+    runs-on: ubuntu-latest
+    env:
+      FIREBASE_CLI_AUTH_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+    steps:
+      - name: Code auschecken # Ruft die Projektdateien von GitHub ab
         uses: actions/checkout@v4
 
-        - name: Firebase CLI installieren
+      - name: Firebase CLI installieren
         run: npm install -g firebase-tools
 
-        - name: Deployment auf Firebase Hosting durchführen
+      - name: Deployment auf Firebase Hosting durchführen
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-        # Ihre Firebase Project ID
-        projectId: coincollection-9ae5e 
-        channelId: live
-env:
-  # LÖSUNG: Übergibt das CI-Token an die Firebase CLI
-  FIREBASE_CLI_AUTH_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          projectId: coincollection-9ae5e
+          channelId: live
