@@ -447,10 +447,15 @@
          * @param {File} file - The file object.
          * @param {string} coinId - The ID of the coin.
          * @param {string} side - 'vorder' or 'rueck'.
+         * @param {string} userId - The user ID (optional, defaults to currentUserId).
          * @returns {Promise<string>} - The download URL.
          */
-        async function uploadFile(file, coinId, side) {
-            const storageRef = ref(storage, `coin_images/${currentUserId}/${coinId}/${side}-${file.name}`);
+        async function uploadFile(file, coinId, side, userId = currentUserId) {
+            const uid = userId || currentUserId || auth.currentUser?.uid;
+            if (!uid) {
+                throw new Error('Keine Benutzer-ID für Datei-Upload verfügbar');
+            }
+            const storageRef = ref(storage, `coin_images/${uid}/${coinId}/${side}-${file.name}`);
             const snapshot = await uploadBytes(storageRef, file);
             return getDownloadURL(snapshot.ref);
         }
@@ -458,9 +463,24 @@
         elements.coinForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            if (!currentUserId || auth.currentUser.isAnonymous) {
+            // Prüfe Authentifizierung
+            const currentUser = auth.currentUser;
+            if (!currentUser || currentUser.isAnonymous) {
                 showMessage('Sie müssen als Admin angemeldet sein, um Daten zu speichern.', 'error');
                 return;
+            }
+            
+            // Verwende die aktuelle User-UID
+            const saveUserId = currentUser.uid;
+            if (!saveUserId) {
+                showMessage('Fehler: Keine Benutzer-ID gefunden.', 'error');
+                return;
+            }
+            
+            // Update currentUserId falls nötig
+            if (currentUserId !== saveUserId) {
+                console.warn(`currentUserId (${currentUserId}) differs from auth.currentUser.uid (${saveUserId}), updating...`);
+                currentUserId = saveUserId;
             }
 
             elements.saveButton.disabled = true;
@@ -486,23 +506,34 @@
                 const fileVorder = elements.fotoVorder.files[0];
                 if (fileVorder) {
                     showMessage('Lade Vorderseiten-Foto hoch...', 'success');
-                    formData.foto_vorderseite_url = await uploadFile(fileVorder, coinId, 'vorder');
+                    formData.foto_vorderseite_url = await uploadFile(fileVorder, coinId, 'vorder', saveUserId);
                 }
 
                 const fileRueck = elements.fotoRueck.files[0];
                 if (fileRueck) {
                     showMessage('Lade Rückseiten-Foto hoch...', 'success');
-                    formData.foto_rueckseite_url = await uploadFile(fileRueck, coinId, 'rueck');
+                    formData.foto_rueckseite_url = await uploadFile(fileRueck, coinId, 'rueck', saveUserId);
                 }
 
                 // 2. Metadaten in Firestore speichern
-                const coinRef = doc(db, getCollectionPath(currentUserId), coinId);
+                const collectionPath = getCollectionPath(saveUserId);
+                console.log(`Saving coin to path: ${collectionPath}/${coinId}`);
+                console.log(`Save user ID: ${saveUserId}`);
+                console.log(`Current user ID (for reference): ${currentUserId}`);
+                console.log(`Snapshot listening to UID: ${saveUserId} (should match)`);
+                
+                const coinRef = doc(db, collectionPath, coinId);
                 await setDoc(coinRef, formData, { merge: true }); // setDoc mit merge: true funktioniert für Hinzufügen und Aktualisieren
 
+                console.log(`Coin saved successfully with ID: ${coinId} to path: ${collectionPath}`);
                 showMessage(`Münze ${formData.nation} (${formData.year}) erfolgreich gespeichert!`, 'success');
                 
                 // Formular zurücksetzen
                 resetCoinForm();
+                
+                // Der onSnapshot sollte automatisch aktualisiert werden
+                // Prüfe, ob der Snapshot auf die richtige UID hört
+                console.log(`Snapshot should automatically update. Current snapshot UID: ${saveUserId}`);
 
             } catch (error) {
                 console.error("Speicherfehler:", error);
@@ -603,9 +634,11 @@
                         <p><span class="font-semibold">Prägestelle:</span> ${coin.praegestelle || '-'}</p>
                         <p><span class="font-semibold">Sonstiges:</span> ${coin.sonstiges || '-'}</p>
                     </div>
+                    ${coin.beschreibung ? `
                     <div class="mt-4">
                         <p class="text-gray-700 text-sm italic">${coin.beschreibung.substring(0, 80)}${coin.beschreibung.length > 80 ? '...' : ''}</p>
                     </div>
+                    ` : ''}
                 </div>
                 ${isAdmin ? `
                 <div class="flex p-3 bg-gray-50 border-t border-gray-100 space-x-2">
@@ -642,6 +675,8 @@
             }
 
             console.log(`Loading coins for UID: ${uid}`);
+            const collectionPath = getCollectionPath(uid);
+            console.log(`Collection path: ${collectionPath}`);
             const loadStartTime = Date.now();
             elements.loading.style.display = 'block';
             
@@ -654,7 +689,7 @@
                 }
             }, 3000);
 
-            const collectionRef = collection(db, getCollectionPath(uid));
+            const collectionRef = collection(db, collectionPath);
             // Hinweis: orderBy() wird hier vermieden, um Index-Fehler zu umgehen. Sortierung erfolgt Client-seitig.
             const q = query(collectionRef); 
 
