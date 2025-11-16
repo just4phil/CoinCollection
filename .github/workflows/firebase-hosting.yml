@@ -1,4 +1,4 @@
-  - name: Firebase CLI installieren
+name: Firebase Hosting DeploymentLöst den Workflow bei jedem Push auf den 'main' Branch auson:push:branches:- mainErmöglicht das Klonen des Repositoriespermissions:contents: readjobs:deploy:# Führt den Job auf dem neuesten Ubuntu-Runner ausruns-on: ubuntu-lateststeps:- name: Code auscheckenuses: actions/checkout@v4  - name: Firebase CLI installieren
     # Da wir nur Hosting nutzen und kein Build-Step (wie bei React) haben, ist die Installation ausreichend.
     run: npm install -g firebase-tools
 
