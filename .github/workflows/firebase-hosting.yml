@@ -25,9 +25,9 @@ jobs:
       - name: Deployment auf Firebase Hosting durchführen
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          # Ihr Firebase Project ID
-          projectId: coincollection-9ae5e 
-          # WICHTIG: Überschreibt den Standard-Auth-Token mit unserem CI Token
-          channelId: live
-        env:
-          FIREBASE_CLI_AUTH_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        # Your Firebase Project ID
+        projectId: coincollection-9ae5e 
+        channelId: live
+    env:
+      # SOLUTION: Passes the CI token to the Firebase CLI, solving the authentication error
+      FIREBASE_CLI_AUTH_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
