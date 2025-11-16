@@ -1,0 +1,32 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules für Münzsammlung
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Öffentlicher Zugriff zum Lesen von Münzbildern
+    // Jeder kann die Bilder ansehen (für öffentliche Ansicht)
+    match /coin_images/{userId}/{coinId}/{allPaths=**} {
+      // Lesen: Öffentlich erlaubt (jeder kann Bilder ansehen)
+      allow read: if true;
+      
+      // Schreiben: Nur authentifizierte, nicht-anonyme Benutzer (Admins)
+      // Anonyme Benutzer können nichts hochladen
+      allow write: if request.auth != null 
+                   && !request.auth.token.firebase.sign_in_provider.equals('anonymous')
+                   && request.resource.size < 10 * 1024 * 1024 // Max 10MB pro Datei
+                   && request.resource.contentType.matches('image/.*');
+      
+      // Löschen: Nur der Besitzer (userId muss mit auth.uid übereinstimmen)
+      allow delete: if request.auth != null 
+                    && request.auth.uid == userId
+                    && !request.auth.token.firebase.sign_in_provider.equals('anonymous');
+    }
+    
+    // Alle anderen Pfade sind gesperrt
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
