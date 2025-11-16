@@ -1,15 +1,15 @@
-name: Firebase Hosting DeploymentLöst den Workflow bei jedem Push auf den 'main' Branch auson:push:branches:- mainErmöglicht das Klonen des Repositoriespermissions:contents: readjobs:deploy:# Führt den Job auf dem neuesten Ubuntu-Runner ausruns-on: ubuntu-lateststeps:- name: Code auscheckenuses: actions/checkout@v4  - name: Firebase CLI installieren
-    # Da wir nur Hosting nutzen und kein Build-Step (wie bei React) haben, ist die Installation ausreichend.
-    run: npm install -g firebase-tools
+- name: Firebase CLI installieren
+  # Da wir nur Hosting nutzen und kein Build-Step (wie bei React) haben, ist die Installation ausreichend.
+  run: npm install -g firebase-tools
 
-  - name: Deployment auf Firebase Hosting durchführen
-    uses: FirebaseExtended/action-hosting-deploy@v0
-    with:
-      # Der in GitHub Secrets gespeicherte Token
-      repoToken: ${{ secrets.GITHUB_TOKEN }}
-      firebaseServiceAccount: "" # Nicht benötigt, wenn FIREBASE_TOKEN genutzt wird
-      channelId: live
-      projectId: coincollection-9ae5e # Ihr Firebase Project ID
-    env:
-      # WICHTIG: Überschreibt den Standard-Auth-Token mit unserem CI Token
-      FIREBASE_CLI_AUTH_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+- name: Deployment auf Firebase Hosting durchführen
+  uses: FirebaseExtended/action-hosting-deploy@v0
+  with:
+    # Der in GitHub Secrets gespeicherte Token
+    repoToken: ${{ secrets.GITHUB_TOKEN }}
+    firebaseServiceAccount: "" # Nicht benötigt, wenn FIREBASE_TOKEN genutzt wird
+    channelId: live
+    projectId: coincollection-9ae5e # Ihr Firebase Project ID
+  env:
+    # WICHTIG: Überschreibt den Standard-Auth-Token mit unserem CI Token
+    FIREBASE_CLI_AUTH_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
