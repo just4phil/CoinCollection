@@ -18,10 +18,10 @@
     <!-- Hauptcontainer -->
     <div id="app-container" class="max-w-7xl mx-auto p-4 md:p-8">
 
-        <!-- Header mit Login oben links -->
+        <!-- Header mit Login oben rechts -->
         <header class="relative bg-white rounded-lg shadow-md mb-8 py-6 px-4 md:px-8">
-            <!-- Login-Bereich oben links -->
-            <div class="absolute top-4 left-4">
+            <!-- Login-Bereich oben rechts -->
+            <div class="absolute top-4 right-4">
                 <!-- Login-Button (wenn nicht eingeloggt) -->
                 <button id="login-toggle-button" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition duration-150" style="display:none;">
                     Admin Login
@@ -32,7 +32,7 @@
                     <button id="logout-button" class="bg-red-500 text-white px-3 py-1 rounded-lg text-xs font-semibold hover:bg-red-600 transition duration-150">Abmelden</button>
                 </div>
                 <!-- Login-Formular (Dropdown) -->
-                <div id="login-dropdown" class="absolute top-12 left-0 bg-white p-4 rounded-xl card-shadow z-50 min-w-80" style="display:none;">
+                <div id="login-dropdown" class="absolute top-12 right-0 bg-white p-4 rounded-xl card-shadow z-50 min-w-80" style="display:none;">
                     <h2 class="text-xl font-semibold mb-4 text-gray-700">Admin Login</h2>
                     <form id="login-form">
                         <input type="email" id="login-email" placeholder="E-Mail" required class="w-full p-3 mb-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm">
