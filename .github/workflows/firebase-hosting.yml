@@ -1,4 +1,5 @@
 name: Firebase Hosting Deployment
+
 on:
   push:
     branches:
@@ -11,9 +12,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      FIREBASE_CLI_AUTH_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+      # Service Account Secret für dein Projekt
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_COINCOLLECTION_9AE5E }}
     steps:
-      - name: Code auschecken # Ruft die Projektdateien von GitHub ab
+      - name: Code auschecken
         uses: actions/checkout@v4
 
       - name: Firebase CLI installieren
@@ -24,3 +26,4 @@ jobs:
         with:
           projectId: coincollection-9ae5e
           channelId: live
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_COINCOLLECTION_9AE5E }}
