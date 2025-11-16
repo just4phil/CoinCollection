@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Münzsammlung Manager (Firebase)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Styles für Shadow und Hover Effekte */
+        .card-shadow {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+
+    <!-- Hauptcontainer -->
+    <div id="app-container" class="max-w-7xl mx-auto p-4 md:p-8">
+
+        <header class="text-center py-6 bg-white rounded-lg shadow-md mb-8">
+            <h1 class="text-4xl font-extrabold text-blue-800">Münzsammlung Digital</h1>
+            <p id="app-status" class="mt-2 text-gray-500">Wird initialisiert...</p>
+        </header>
+
+        <!-- Lade-Indikator -->
+        <div id="loading" class="text-center py-10" style="display:none;">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <p class="mt-4 text-blue-600">Daten werden geladen...</p>
+        </div>
+
+        <!-- Systemnachrichten -->
+        <div id="message-box" class="fixed top-4 right-4 z-50"></div>
+
+        <!-- LOGIN / AUTH VIEW -->
+        <div id="auth-view" class="max-w-md mx-auto bg-white p-6 rounded-xl card-shadow" style="display:none;">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-700">Admin Login</h2>
+            <form id="login-form">
+                <input type="email" id="login-email" placeholder="E-Mail" required class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                <input type="password" id="login-password" placeholder="Passwort" required class="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition duration-150">Anmelden</button>
+            </form>
+            <p class="mt-4 text-sm text-center text-gray-500">Nur für Administratoren (Upload/Edit).</p>
+        </div>
+
+        <!-- LOGGED-IN VIEW (Admin Panel & Coin List) -->
+        <div id="admin-main-view" style="display:none;">
+            
+            <!-- Admin Header -->
+            <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow mb-6">
+                <p class="text-sm text-gray-600">Angemeldet als: <span id="user-display" class="font-medium text-blue-600"></span></p>
+                <button id="logout-button" class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-600 transition duration-150">Abmelden</button>
+            </div>
+
+            <!-- ADMIN UPLOAD/EDIT PANEL -->
+            <div class="bg-white p-6 md:p-8 rounded-xl card-shadow mb-8">
+                <h2 class="text-2xl font-bold mb-6 text-blue-700" id="form-title">Neue Münze hinzufügen</h2>
+                <form id="coin-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    <!-- Linke Spalte: Metadaten -->
+                    <div class="space-y-4">
+                        <input type="hidden" id="coin-doc-id">
+                        <label class="block">
+                            <span class="text-gray-700">Nation</span>
+                            <input type="text" id="nation" placeholder="Deutschland, USA, etc." required class="mt-1 w-full p-3 border border-gray-300 rounded-lg">
+                        </label>
+                        <label class="block">
+                            <span class="text-gray-700">Jahr</span>
+                            <input type="number" id="year" placeholder="1974" required class="mt-1 w-full p-3 border border-gray-300 rounded-lg">
+                        </label>
+                        <label class="block">
+                            <span class="text-gray-700">Nennwert</span>
+                            <input type="text" id="nennwert" placeholder="5 Deutsche Mark, 1 Dollar" required class="mt-1 w-full p-3 border border-gray-300 rounded-lg">
+                        </label>
+                        <label class="block">
+                            <span class="text-gray-700">Prägestelle</span>
+                            <input type="text" id="praegestelle" placeholder="J, D, P (falls bekannt)" class="mt-1 w-full p-3 border border-gray-300 rounded-lg">
+                        </label>
+                        <label class="block">
+                            <span class="text-gray-700">Sonstiges / Erhaltung</span>
+                            <input type="text" id="sonstiges" placeholder="Polierte Platte, Stempelglanz" class="mt-1 w-full p-3 border border-gray-300 rounded-lg">
+                        </label>
+                    </div>
+
+                    <!-- Rechte Spalte: Beschreibung & Fotos -->
+                    <div class="space-y-4">
+                        <label class="block">
+                            <span class="text-gray-700">Beschreibung</span>
+                            <textarea id="beschreibung" placeholder="Detaillierte Beschreibung der Münze und des Motivs..." rows="4" required class="mt-1 w-full p-3 border border-gray-300 rounded-lg resize-none"></textarea>
+                        </label>
+                        <label class="block">
+                            <span class="text-gray-700 font-medium">Foto (Vorderseite)</span>
+                            <input type="file" id="foto-vorderseite" accept="image/*" class="mt-1 w-full text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        </label>
+                        <label class="block">
+                            <span class="text-gray-700 font-medium">Foto (Rückseite)</span>
+                            <input type="file" id="foto-rueckseite" accept="image/*" class="mt-1 w-full text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        </label>
+
+                        <div id="image-preview" class="flex space-x-2 mt-4">
+                            <img id="preview-vorder" src="https://placehold.co/100x100/e0f2fe/1e3a8a?text=Vorder" class="w-24 h-24 object-cover rounded-lg border border-gray-200" style="display:none;">
+                            <img id="preview-rueck" src="https://placehold.co/100x100/e0f2fe/1e3a8a?text=Rück" class="w-24 h-24 object-cover rounded-lg border border-gray-200" style="display:none;">
+                        </div>
+
+                    </div>
+                    
+                    <!-- Formular-Aktionen -->
+                    <div class="md:col-span-2 flex space-x-4 pt-4">
+                        <button type="submit" id="save-coin-button" class="flex-1 bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition duration-150 disabled:bg-green-400">Speichern</button>
+                        <button type="button" id="cancel-edit-button" class="bg-gray-300 text-gray-800 p-3 rounded-lg font-bold hover:bg-gray-400 transition duration-150" style="display:none;">Abbrechen</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- PUBLIC COIN LIST & SEARCH -->
+            <div class="bg-white p-6 md:p-8 rounded-xl card-shadow">
+                <h2 class="text-3xl font-bold mb-6 text-blue-700">Gesamte Münzsammlung</h2>
+                
+                <input type="text" id="coin-search" placeholder="Suche nach Nation, Jahr oder Wert..." class="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+
+                <div id="coin-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Münzkarten werden hier eingefügt -->
+                    <p id="empty-state" class="col-span-full text-center text-gray-500 mt-4">Noch keine Münzen vorhanden.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- JavaScript und Firebase Logik -->
+    <script type="module">
+        // Firebase SDK Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, getDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+        // Deaktiviert Firestore orderBy() Warnungen (wichtig für dieses einfache Setup)
+        setLogLevel('Debug');
+
+        // 1. Firebase Konfiguration & Initialisierung (Verwendung der Canvas globalen Variablen)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Fallback-Werte, falls die Umgebungsvariablen nicht gesetzt sind (basierend auf Ihren Daten)
+        if (Object.keys(firebaseConfig).length === 0) {
+            console.warn("Using fallback Firebase config. Please ensure environment variables are set for production.");
+            firebaseConfig.apiKey = "AIzaSyAAzspi6TV7ZMkBh-7X0AfWaZOTmxPmHYI";
+            firebaseConfig.authDomain = "coincollection-9ae5e.firebaseapp.com";
+            firebaseConfig.projectId = "coincollection-9ae5e";
+            firebaseConfig.storageBucket = "coincollection-9ae5e.firebasestorage.app";
+            firebaseConfig.appId = "1:567774970546:web:d5e045f232223b748d3fab";
+        }
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const storage = getStorage(app);
+
+        let currentUserId = null;
+        let allCoinsData = []; // Speichert alle Münzdaten für die Client-Seite Suche
+
+        // Firestore Pfad-Funktion
+        const getCollectionPath = (uid) => `artifacts/${appId}/users/${uid}/muenzsammlung`;
+
+        // 2. UI-Elemente
+        const elements = {
+            loading: document.getElementById('loading'),
+            appStatus: document.getElementById('app-status'),
+            authView: document.getElementById('auth-view'),
+            adminMainView: document.getElementById('admin-main-view'),
+            loginForm: document.getElementById('login-form'),
+            logoutButton: document.getElementById('logout-button'),
+            userDisplay: document.getElementById('user-display'),
+            coinForm: document.getElementById('coin-form'),
+            coinList: document.getElementById('coin-list'),
+            coinSearch: document.getElementById('coin-search'),
+            emptyState: document.getElementById('empty-state'),
+            formTitle: document.getElementById('form-title'),
+            saveButton: document.getElementById('save-coin-button'),
+            cancelEditButton: document.getElementById('cancel-edit-button'),
+            fotoVorder: document.getElementById('foto-vorderseite'),
+            fotoRueck: document.getElementById('foto-rueckseite'),
+            previewVorder: document.getElementById('preview-vorder'),
+            previewRueck: document.getElementById('preview-rueck'),
+        };
+
+        // 3. Hilfsfunktionen
+        
+        /** Zeigt eine temporäre Nachricht (ersetzt alert()) */
+        function showMessage(text, type = 'success') {
+            const box = document.createElement('div');
+            box.textContent = text;
+            box.className = `p-4 mb-2 rounded-lg shadow-lg text-white font-semibold transform transition-all duration-300 ${
+                type === 'error' ? 'bg-red-500' : 'bg-green-500'
+            }`;
+            document.getElementById('message-box').prepend(box);
+            setTimeout(() => {
+                box.classList.add('opacity-0');
+                box.addEventListener('transitionend', () => box.remove());
+            }, 3000);
+        }
+
+        /** Bild-Vorschau-Funktion */
+        function setupImagePreview(inputElement, previewElement) {
+            inputElement.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        previewElement.src = e.target.result;
+                        previewElement.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    previewElement.style.display = 'none';
+                }
+            });
+        }
+        setupImagePreview(elements.fotoVorder, elements.previewVorder);
+        setupImagePreview(elements.fotoRueck, elements.previewRueck);
+
+
+        // 4. Authentifizierung (Admin-Zugriff)
+
+        async function attemptSignIn() {
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                    elements.appStatus.textContent = 'Bereit.';
+                } else {
+                    await signInAnonymously(auth);
+                    elements.appStatus.textContent = 'Anonym angemeldet. Für den Admin-Zugriff bitte einloggen.';
+                }
+            } catch (error) {
+                console.error("Initial sign-in failed:", error);
+                elements.appStatus.textContent = 'Fehler beim Anmelden.';
+            }
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                // Überprüfen, ob es sich um einen temporären anonymen oder einen echten Admin-Nutzer handelt
+                if (user.isAnonymous) {
+                     // Zeigt die Admin-Ansicht (für die Coin List), aber das Login-Formular (für den Admin-Modus)
+                    elements.adminMainView.style.display = 'block';
+                    elements.authView.style.display = 'block';
+                    elements.userDisplay.textContent = 'Anonym';
+                    loadCoins(user.uid);
+                } else {
+                    // Echter Admin (E-Mail/Passwort)
+                    elements.authView.style.display = 'none';
+                    elements.adminMainView.style.display = 'block';
+                    elements.userDisplay.textContent = user.email || user.uid;
+                    loadCoins(user.uid);
+                }
+            } else {
+                currentUserId = null;
+                elements.authView.style.display = 'block';
+                elements.adminMainView.style.display = 'none';
+                elements.coinList.innerHTML = `<p class="col-span-full text-center text-gray-500 mt-4">Bitte melden Sie sich an, um die Münzen zu verwalten.</p>`;
+                allCoinsData = [];
+                // Bei Logout leere Liste anzeigen
+                elements.emptyState.style.display = 'block'; 
+            }
+        });
+
+        elements.loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                elements.saveButton.disabled = true;
+                elements.saveButton.textContent = 'Anmelden...';
+                await signInWithEmailAndPassword(auth, email, password);
+                showMessage('Erfolgreich als Admin angemeldet!', 'success');
+                // UI wird durch onAuthStateChanged aktualisiert
+            } catch (error) {
+                console.error("Login Error:", error);
+                showMessage(`Fehler beim Login: ${error.message}`, 'error');
+            } finally {
+                elements.saveButton.disabled = false;
+                elements.saveButton.textContent = 'Speichern';
+            }
+        });
+
+        elements.logoutButton.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                showMessage('Erfolgreich abgemeldet.', 'success');
+                // UI wird durch onAuthStateChanged aktualisiert
+            } catch (error) {
+                console.error("Logout Error:", error);
+                showMessage('Fehler beim Abmelden.', 'error');
+            }
+        });
+
+        // 5. Datenverwaltung (Upload, Edit, Delete)
+
+        /**
+         * Uploads a file to Firebase Storage.
+         * @param {File} file - The file object.
+         * @param {string} coinId - The ID of the coin.
+         * @param {string} side - 'vorder' or 'rueck'.
+         * @returns {Promise<string>} - The download URL.
+         */
+        async function uploadFile(file, coinId, side) {
+            const storageRef = ref(storage, `coin_images/${currentUserId}/${coinId}/${side}-${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            return getDownloadURL(snapshot.ref);
+        }
+
+        elements.coinForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!currentUserId || auth.currentUser.isAnonymous) {
+                showMessage('Sie müssen als Admin angemeldet sein, um Daten zu speichern.', 'error');
+                return;
+            }
+
+            elements.saveButton.disabled = true;
+            elements.saveButton.textContent = 'Speichere Daten...';
+
+            try {
+                const isEditing = elements.coinDocId.value;
+                const coinId = isEditing || crypto.randomUUID();
+
+                let formData = {
+                    nation: document.getElementById('nation').value.trim(),
+                    year: parseInt(document.getElementById('year').value),
+                    nennwert: document.getElementById('nennwert').value.trim(),
+                    praegestelle: document.getElementById('praegestelle').value.trim(),
+                    sonstiges: document.getElementById('sonstiges').value.trim(),
+                    beschreibung: document.getElementById('beschreibung').value.trim(),
+                    // Alte URLs beibehalten
+                    foto_vorderseite_url: elements.previewVorder.dataset.currentUrl || '',
+                    foto_rueckseite_url: elements.previewRueck.dataset.currentUrl || '',
+                };
+
+                // 1. Fotos hochladen (falls neu ausgewählt)
+                const fileVorder = elements.fotoVorder.files[0];
+                if (fileVorder) {
+                    showMessage('Lade Vorderseiten-Foto hoch...', 'success');
+                    formData.foto_vorderseite_url = await uploadFile(fileVorder, coinId, 'vorder');
+                }
+
+                const fileRueck = elements.fotoRueck.files[0];
+                if (fileRueck) {
+                    showMessage('Lade Rückseiten-Foto hoch...', 'success');
+                    formData.foto_rueckseite_url = await uploadFile(fileRueck, coinId, 'rueck');
+                }
+
+                // 2. Metadaten in Firestore speichern
+                const coinRef = doc(db, getCollectionPath(currentUserId), coinId);
+                await setDoc(coinRef, formData, { merge: true }); // setDoc mit merge: true funktioniert für Hinzufügen und Aktualisieren
+
+                showMessage(`Münze ${formData.nation} (${formData.year}) erfolgreich gespeichert!`, 'success');
+                
+                // Formular zurücksetzen
+                resetCoinForm();
+
+            } catch (error) {
+                console.error("Speicherfehler:", error);
+                showMessage(`Fehler beim Speichern: ${error.message}`, 'error');
+            } finally {
+                elements.saveButton.disabled = false;
+                elements.saveButton.textContent = 'Speichern';
+            }
+        });
+
+        /** Formular-Felder mit Daten füllen */
+        function editCoin(coinData) {
+            // Füllen der Metadaten
+            document.getElementById('coin-doc-id').value = coinData.id;
+            document.getElementById('nation').value = coinData.nation || '';
+            document.getElementById('year').value = coinData.year || '';
+            document.getElementById('nennwert').value = coinData.nennwert || '';
+            document.getElementById('praegestelle').value = coinData.praegestelle || '';
+            document.getElementById('sonstiges').value = coinData.sonstiges || '';
+            document.getElementById('beschreibung').value = coinData.beschreibung || '';
+
+            // Setzen der Vorschau-Bilder und Speichern der aktuellen URL in data-Attributen
+            elements.previewVorder.src = coinData.foto_vorderseite_url || 'https://placehold.co/100x100/e0f2fe/1e3a8a?text=Vorder';
+            elements.previewVorder.style.display = 'block';
+            elements.previewVorder.dataset.currentUrl = coinData.foto_vorderseite_url || '';
+
+            elements.previewRueck.src = coinData.foto_rueckseite_url || 'https://placehold.co/100x100/e0f2fe/1e3a8a?text=Rück';
+            elements.previewRueck.style.display = 'block';
+            elements.previewRueck.dataset.currentUrl = coinData.foto_rueckseite_url || '';
+
+            // Formular-Zustand anpassen
+            elements.formTitle.textContent = `Münze bearbeiten: ${coinData.nation} (${coinData.year})`;
+            elements.cancelEditButton.style.display = 'inline-block';
+            elements.fotoVorder.required = false;
+            elements.fotoRueck.required = false;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        /** Formular zurücksetzen */
+        function resetCoinForm() {
+            elements.coinForm.reset();
+            document.getElementById('coin-doc-id').value = '';
+            elements.formTitle.textContent = 'Neue Münze hinzufügen';
+            elements.cancelEditButton.style.display = 'none';
+            elements.fotoVorder.required = true;
+            elements.fotoRueck.required = true;
+            elements.previewVorder.style.display = 'none';
+            elements.previewRueck.style.display = 'none';
+            // Entfernt gespeicherte URLs
+            elements.previewVorder.dataset.currentUrl = '';
+            elements.previewRueck.dataset.currentUrl = '';
+        }
+
+        elements.cancelEditButton.addEventListener('click', resetCoinForm);
+        
+        /** Löscht einen Eintrag */
+        async function deleteCoin(coinId, name) {
+            if (!auth.currentUser || auth.currentUser.isAnonymous) {
+                showMessage('Sie müssen als Admin angemeldet sein, um Daten zu löschen.', 'error');
+                return;
+            }
+            // Benutzerdefinierte Bestätigung, da alert() verboten ist
+            if (!window.confirm(`Soll die Münze "${name}" wirklich gelöscht werden?`)) {
+                return;
+            }
+            
+            try {
+                const coinRef = doc(db, getCollectionPath(currentUserId), coinId);
+                await deleteDoc(coinRef);
+                showMessage(`Münze "${name}" erfolgreich gelöscht.`, 'success');
+            } catch (error) {
+                console.error("Löschfehler:", error);
+                showMessage(`Fehler beim Löschen: ${error.message}`, 'error');
+            }
+        }
+
+        // 6. Daten lesen und anzeigen (Real-Time mit onSnapshot)
+        
+        /** Erstellt die HTML-Karte für eine Münze */
+        function createCoinCard(coin) {
+            const card = document.createElement('div');
+            card.className = 'bg-white border border-gray-100 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-1';
+            
+            const isAdmin = !auth.currentUser.isAnonymous;
+
+            card.innerHTML = `
+                <div class="h-48 overflow-hidden bg-gray-100 flex items-center justify-center">
+                    <img src="${coin.foto_vorderseite_url || 'https://placehold.co/400x200/cccccc/333333?text=Kein+Bild'}" 
+                         alt="Vorderseite ${coin.nation} ${coin.year}" 
+                         class="w-full h-full object-cover" 
+                         onerror="this.onerror=null;this.src='https://placehold.co/400x200/cccccc/333333?text=Kein+Bild';"
+                    >
+                </div>
+                <div class="p-5">
+                    <h3 class="text-xl font-bold text-gray-900 truncate">${coin.nennwert} (${coin.year})</h3>
+                    <p class="text-sm text-blue-600 font-medium mb-3">${coin.nation}</p>
+                    <div class="text-xs text-gray-500 space-y-1">
+                        <p><span class="font-semibold">Prägestelle:</span> ${coin.praegestelle || '-'}</p>
+                        <p><span class="font-semibold">Sonstiges:</span> ${coin.sonstiges || '-'}</p>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-gray-700 text-sm italic">${coin.beschreibung.substring(0, 80)}${coin.beschreibung.length > 80 ? '...' : ''}</p>
+                    </div>
+                </div>
+                ${isAdmin ? `
+                <div class="flex p-3 bg-gray-50 border-t border-gray-100 space-x-2">
+                    <button data-id="${coin.id}" class="edit-btn text-sm bg-yellow-500 text-white px-3 py-1 rounded-lg hover:bg-yellow-600 flex-1">Bearbeiten</button>
+                    <button data-id="${coin.id}" data-name="${coin.nennwert} (${coin.year})" class="delete-btn text-sm bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 flex-1">Löschen</button>
+                </div>
+                ` : ''}
+            `;
+            
+            // Event Listener für Bearbeiten/Löschen (nur wenn Admin)
+            if (isAdmin) {
+                card.querySelector('.edit-btn').addEventListener('click', () => editCoin(coin));
+                card.querySelector('.delete-btn').addEventListener('click', (e) => deleteCoin(e.target.dataset.id, e.target.dataset.name));
+            }
+            
+            return card;
+        }
+
+
+        /**
+         * Führt die Abfrage aus und reagiert auf Echtzeit-Änderungen.
+         * @param {string} uid - Die Benutzer-ID.
+         */
+        function loadCoins(uid) {
+            if (!uid) return;
+
+            elements.loading.style.display = 'block';
+            const collectionRef = collection(db, getCollectionPath(uid));
+            // Hinweis: orderBy() wird hier vermieden, um Index-Fehler zu umgehen. Sortierung erfolgt Client-seitig.
+            const q = query(collectionRef); 
+
+            // onSnapshot hört auf alle Änderungen in Echtzeit
+            onSnapshot(q, (snapshot) => {
+                const coins = [];
+                snapshot.forEach(doc => {
+                    coins.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Globale Daten speichern und nach Jahr sortieren
+                allCoinsData = coins.sort((a, b) => (b.year || 0) - (a.year || 0));
+                
+                // Erste Anzeige der Daten
+                renderCoins(allCoinsData);
+                elements.loading.style.display = 'none';
+            }, (error) => {
+                console.error("Firestore Snapshot Error:", error);
+                showMessage(`Fehler beim Laden der Sammlung: ${error.message}`, 'error');
+                elements.loading.style.display = 'none';
+            });
+        }
+        
+        /** Rendert die Münzen basierend auf den gefilterten Daten */
+        function renderCoins(coinsToRender) {
+            elements.coinList.innerHTML = '';
+            if (coinsToRender.length === 0) {
+                elements.emptyState.style.display = 'block';
+            } else {
+                elements.emptyState.style.display = 'none';
+                coinsToRender.forEach(coin => {
+                    elements.coinList.appendChild(createCoinCard(coin));
+                });
+            }
+        }
+
+        // 7. Suchfunktion (Client-seitig)
+        
+        elements.coinSearch.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            if (searchTerm === '') {
+                renderCoins(allCoinsData);
+                return;
+            }
+
+            const filteredCoins = allCoinsData.filter(coin => {
+                const searchString = [
+                    coin.nation,
+                    coin.year,
+                    coin.nennwert,
+                    coin.praegestelle,
+                    coin.sonstiges,
+                    coin.beschreibung
+                ].join(' ').toLowerCase();
+
+                return searchString.includes(searchTerm);
+            });
+
+            renderCoins(filteredCoins);
+        });
+
+        // App-Start
+        window.onload = attemptSignIn;
+
+    </script>
+</body>
+</html>
