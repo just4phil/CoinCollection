@@ -60,7 +60,15 @@
 
         <!-- ADMIN UPLOAD/EDIT PANEL (nur für eingeloggte Admins) -->
         <div id="admin-panel" class="bg-white p-6 md:p-8 rounded-xl card-shadow mb-8" style="display:none;">
-            <h2 class="text-2xl font-bold mb-6 text-blue-700" id="form-title">Neue Münze hinzufügen</h2>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-blue-700" id="form-title">Neue Münze hinzufügen</h2>
+                <a href="#coin-list-section" id="link-to-start" class="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                    Zur Sammlung
+                </a>
+            </div>
             <form id="coin-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 <!-- Linke Spalte: Metadaten -->
@@ -119,8 +127,16 @@
         </div>
 
         <!-- ÖFFENTLICHE COIN LIST & SEARCH (immer sichtbar) -->
-        <div class="bg-white p-6 md:p-8 rounded-xl card-shadow">
-            <h2 class="text-3xl font-bold mb-6 text-blue-700">Gesamte Münzsammlung</h2>
+        <div id="coin-list-section" class="bg-white p-6 md:p-8 rounded-xl card-shadow">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold text-blue-700">Gesamte Münzsammlung</h2>
+                <a href="#admin-panel" id="link-to-upload" class="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1" style="display:none;">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Zur Upload-Seite
+                </a>
+            </div>
             
             <input type="text" id="coin-search" placeholder="Suche nach Nation, Jahr oder Wert..." class="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
 
@@ -206,6 +222,8 @@
             previewVorder: document.getElementById('preview-vorder'),
             previewRueck: document.getElementById('preview-rueck'),
             coinDocId: document.getElementById('coin-doc-id'),
+            linkToUpload: document.getElementById('link-to-upload'),
+            linkToStart: document.getElementById('link-to-start'),
         };
 
         // 3. Hilfsfunktionen
@@ -321,6 +339,7 @@
                     elements.loginToggleButton.style.display = 'block';
                     elements.adminInfo.style.display = 'none';
                     elements.adminPanel.style.display = 'none';
+                    elements.linkToUpload.style.display = 'none';
                     elements.appStatus.textContent = '';
                     elements.appStatus.className = 'mt-2 text-gray-500';
                     // Lade Münzen mit gespeicherter Admin-UID oder anonyme UID
@@ -338,6 +357,7 @@
                     elements.loginDropdown.style.display = 'none';
                     elements.adminInfo.style.display = 'flex';
                     elements.adminPanel.style.display = 'block';
+                    elements.linkToUpload.style.display = 'flex';
                     elements.userDisplay.textContent = user.email || user.uid;
                     elements.appStatus.textContent = '';
                     elements.appStatus.className = 'mt-2 text-gray-500';
@@ -350,9 +370,27 @@
                 elements.loginToggleButton.style.display = 'block';
                 elements.adminInfo.style.display = 'none';
                 elements.adminPanel.style.display = 'none';
+                elements.linkToUpload.style.display = 'none';
                 elements.loginDropdown.style.display = 'none';
                 // Versuche erneut anonym anzumelden
                 attemptSignIn();
+            }
+        });
+
+        // Smooth Scrolling für Navigation-Links
+        elements.linkToStart?.addEventListener('click', (e) => {
+            e.preventDefault();
+            const coinListSection = document.getElementById('coin-list-section');
+            if (coinListSection) {
+                coinListSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+
+        elements.linkToUpload?.addEventListener('click', (e) => {
+            e.preventDefault();
+            const adminPanel = document.getElementById('admin-panel');
+            if (adminPanel) {
+                adminPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         });
 
