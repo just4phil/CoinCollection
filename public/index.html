@@ -274,9 +274,22 @@
                     }
                     elements.appStatus.textContent = 'Bereit.';
                 } else {
-                    const userCredential = await signInAnonymously(auth);
-                    publicUserId = userCredential.user.uid;
-                    elements.appStatus.textContent = 'Öffentliche Ansicht.';
+                    try {
+                        const userCredential = await signInAnonymously(auth);
+                        publicUserId = userCredential.user.uid;
+                        elements.appStatus.textContent = '';
+                        // Verstecke Status, wenn erfolgreich
+                    } catch (anonError) {
+                        console.warn("Anonymous sign-in failed:", anonError);
+                        // Versuche trotzdem, Münzen zu laden, falls Admin-UID vorhanden
+                        if (storedAdminUid) {
+                            elements.appStatus.textContent = '';
+                            loadCoins(storedAdminUid);
+                            return;
+                        }
+                        // Wenn keine Admin-UID vorhanden, zeige Fehler
+                        throw anonError;
+                    }
                 }
                 
                 // Lade Münzen mit der richtigen UID (Admin-UID falls vorhanden, sonst anonyme UID)
@@ -286,7 +299,16 @@
                 }
             } catch (error) {
                 console.error("Initial sign-in failed:", error);
-                elements.appStatus.textContent = 'Fehler beim Laden.';
+                // Zeige nur Fehler, wenn keine Admin-UID vorhanden ist
+                const storedAdminUid = localStorage.getItem(ADMIN_UID_KEY);
+                if (!storedAdminUid) {
+                    elements.appStatus.textContent = 'Fehler beim Laden. Bitte Seite neu laden.';
+                    elements.appStatus.className = 'mt-2 text-red-500';
+                } else {
+                    // Versuche trotzdem, mit gespeicherter Admin-UID zu laden
+                    elements.appStatus.textContent = '';
+                    loadCoins(storedAdminUid);
+                }
             }
         }
 
@@ -299,7 +321,8 @@
                     elements.loginToggleButton.style.display = 'block';
                     elements.adminInfo.style.display = 'none';
                     elements.adminPanel.style.display = 'none';
-                    elements.appStatus.textContent = 'Öffentliche Ansicht.';
+                    elements.appStatus.textContent = '';
+                    elements.appStatus.className = 'mt-2 text-gray-500';
                     // Lade Münzen mit gespeicherter Admin-UID oder anonyme UID
                     const uidToLoad = getPublicUserId() || publicUserId;
                     if (uidToLoad) {
@@ -316,7 +339,8 @@
                     elements.adminInfo.style.display = 'flex';
                     elements.adminPanel.style.display = 'block';
                     elements.userDisplay.textContent = user.email || user.uid;
-                    elements.appStatus.textContent = 'Admin-Modus aktiv.';
+                    elements.appStatus.textContent = '';
+                    elements.appStatus.className = 'mt-2 text-gray-500';
                     // Lade Münzen mit Admin-UID
                     loadCoins(user.uid);
                 }
