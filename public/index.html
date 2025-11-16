@@ -279,7 +279,7 @@
             }
         });
 
-        async function attemptSignIn() {
+        async function attemptSignIn(skipCoinLoad = false) {
             try {
                 // Prüfe, ob eine Admin-UID in localStorage gespeichert ist
                 const storedAdminUid = localStorage.getItem(ADMIN_UID_KEY);
@@ -300,8 +300,8 @@
                         // Verstecke Status, wenn erfolgreich
                     } catch (anonError) {
                         console.warn("Anonymous sign-in failed:", anonError);
-                        // Versuche trotzdem, Münzen zu laden, falls Admin-UID vorhanden
-                        if (storedAdminUid) {
+                        // Versuche trotzdem, Münzen zu laden, falls Admin-UID vorhanden (nur wenn nicht skipCoinLoad)
+                        if (storedAdminUid && !skipCoinLoad) {
                             elements.appStatus.textContent = '';
                             loadCoins(storedAdminUid);
                             return;
@@ -311,10 +311,12 @@
                     }
                 }
                 
-                // Lade Münzen mit der richtigen UID (Admin-UID falls vorhanden, sonst anonyme UID)
-                const uidToLoad = storedAdminUid || publicUserId;
-                if (uidToLoad) {
-                    loadCoins(uidToLoad);
+                // Lade Münzen nur wenn nicht explizit übersprungen (onAuthStateChanged kümmert sich darum)
+                if (!skipCoinLoad) {
+                    const uidToLoad = storedAdminUid || publicUserId;
+                    if (uidToLoad) {
+                        loadCoins(uidToLoad);
+                    }
                 }
             } catch (error) {
                 console.error("Initial sign-in failed:", error);
@@ -323,8 +325,8 @@
                 if (!storedAdminUid) {
                     elements.appStatus.textContent = 'Fehler beim Laden. Bitte Seite neu laden.';
                     elements.appStatus.className = 'mt-2 text-red-500';
-                } else {
-                    // Versuche trotzdem, mit gespeicherter Admin-UID zu laden
+                } else if (!skipCoinLoad) {
+                    // Versuche trotzdem, mit gespeicherter Admin-UID zu laden (nur wenn nicht skipCoinLoad)
                     elements.appStatus.textContent = '';
                     loadCoins(storedAdminUid);
                 }
@@ -366,15 +368,28 @@
                     loadCoins(user.uid);
                 }
             } else {
-                // Nicht angemeldet - sollte normalerweise nicht passieren, da wir anonym anmelden
+                // Nicht angemeldet - nach Logout
                 currentUserId = null;
                 elements.loginToggleButton.style.display = 'block';
                 elements.adminInfo.style.display = 'none';
                 elements.adminPanel.style.display = 'none';
                 elements.linkToUpload.style.display = 'none';
                 elements.loginDropdown.style.display = 'none';
-                // Versuche erneut anonym anzumelden
-                attemptSignIn();
+                elements.appStatus.textContent = '';
+                elements.appStatus.className = 'mt-2 text-gray-500';
+                
+                // Lade öffentliche Münzen sofort mit gespeicherter Admin-UID (falls vorhanden)
+                const storedAdminUid = localStorage.getItem(ADMIN_UID_KEY);
+                if (storedAdminUid) {
+                    console.log('Loading public coins with stored admin UID after logout');
+                    loadCoins(storedAdminUid);
+                }
+                
+                // Versuche anonym anzumelden (asynchron, lädt keine Münzen, da onAuthStateChanged das macht)
+                attemptSignIn(true).catch(error => {
+                    console.warn("Anonymous sign-in after logout failed:", error);
+                    // Münzen wurden bereits mit Admin-UID geladen (falls vorhanden)
+                });
             }
         });
 
@@ -419,21 +434,8 @@
             try {
                 await signOut(auth);
                 showMessage('Erfolgreich abgemeldet.', 'success');
-                // Nach dem Logout: anonym anmelden für öffentliche Ansicht
-                setTimeout(async () => {
-                    try {
-                        const userCredential = await signInAnonymously(auth);
-                        publicUserId = userCredential.user.uid;
-                        // Lade Münzen mit gespeicherter Admin-UID oder anonyme UID
-                        const uidToLoad = getPublicUserId() || publicUserId;
-                        if (uidToLoad) {
-                            loadCoins(uidToLoad);
-                        }
-                    } catch (error) {
-                        console.error("Anonymous sign-in after logout failed:", error);
-                    }
-                }, 500);
                 // UI wird durch onAuthStateChanged aktualisiert
+                // onAuthStateChanged wird automatisch attemptSignIn aufrufen
             } catch (error) {
                 console.error("Logout Error:", error);
                 showMessage('Fehler beim Abmelden.', 'error');
