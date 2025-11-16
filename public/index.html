@@ -18,9 +18,35 @@
     <!-- Hauptcontainer -->
     <div id="app-container" class="max-w-7xl mx-auto p-4 md:p-8">
 
-        <header class="text-center py-6 bg-white rounded-lg shadow-md mb-8">
-            <h1 class="text-4xl font-extrabold text-blue-800">Münzsammlung Digital</h1>
-            <p id="app-status" class="mt-2 text-gray-500">Wird initialisiert...</p>
+        <!-- Header mit Login oben links -->
+        <header class="relative bg-white rounded-lg shadow-md mb-8 py-6 px-4 md:px-8">
+            <!-- Login-Bereich oben links -->
+            <div class="absolute top-4 left-4">
+                <!-- Login-Button (wenn nicht eingeloggt) -->
+                <button id="login-toggle-button" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition duration-150" style="display:none;">
+                    Admin Login
+                </button>
+                <!-- Admin-Info (wenn eingeloggt) -->
+                <div id="admin-info" class="flex items-center gap-3" style="display:none;">
+                    <span class="text-sm text-gray-600">Angemeldet: <span id="user-display" class="font-medium text-blue-600"></span></span>
+                    <button id="logout-button" class="bg-red-500 text-white px-3 py-1 rounded-lg text-xs font-semibold hover:bg-red-600 transition duration-150">Abmelden</button>
+                </div>
+                <!-- Login-Formular (Dropdown) -->
+                <div id="login-dropdown" class="absolute top-12 left-0 bg-white p-4 rounded-xl card-shadow z-50 min-w-80" style="display:none;">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-700">Admin Login</h2>
+                    <form id="login-form">
+                        <input type="email" id="login-email" placeholder="E-Mail" required class="w-full p-3 mb-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        <input type="password" id="login-password" placeholder="Passwort" required class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        <button type="submit" id="login-submit-button" class="w-full bg-blue-600 text-white p-2 rounded-lg font-bold hover:bg-blue-700 transition duration-150 text-sm">Anmelden</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Titel zentriert -->
+            <div class="text-center">
+                <h1 class="text-4xl font-extrabold text-blue-800">Münzsammlung Digital</h1>
+                <p id="app-status" class="mt-2 text-gray-500">Wird initialisiert...</p>
+            </div>
         </header>
 
         <!-- Lade-Indikator -->
@@ -32,99 +58,78 @@
         <!-- Systemnachrichten -->
         <div id="message-box" class="fixed top-4 right-4 z-50"></div>
 
-        <!-- LOGIN / AUTH VIEW -->
-        <div id="auth-view" class="max-w-md mx-auto bg-white p-6 rounded-xl card-shadow" style="display:none;">
-            <h2 class="text-2xl font-semibold mb-6 text-gray-700">Admin Login</h2>
-            <form id="login-form">
-                <input type="email" id="login-email" placeholder="E-Mail" required class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                <input type="password" id="login-password" placeholder="Passwort" required class="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition duration-150">Anmelden</button>
-            </form>
-            <p class="mt-4 text-sm text-center text-gray-500">Nur für Administratoren (Upload/Edit).</p>
-        </div>
+        <!-- ADMIN UPLOAD/EDIT PANEL (nur für eingeloggte Admins) -->
+        <div id="admin-panel" class="bg-white p-6 md:p-8 rounded-xl card-shadow mb-8" style="display:none;">
+            <h2 class="text-2xl font-bold mb-6 text-blue-700" id="form-title">Neue Münze hinzufügen</h2>
+            <form id="coin-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <!-- LOGGED-IN VIEW (Admin Panel & Coin List) -->
-        <div id="admin-main-view" style="display:none;">
-            
-            <!-- Admin Header -->
-            <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow mb-6">
-                <p class="text-sm text-gray-600">Angemeldet als: <span id="user-display" class="font-medium text-blue-600"></span></p>
-                <button id="logout-button" class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-600 transition duration-150">Abmelden</button>
-            </div>
-
-            <!-- ADMIN UPLOAD/EDIT PANEL -->
-            <div class="bg-white p-6 md:p-8 rounded-xl card-shadow mb-8">
-                <h2 class="text-2xl font-bold mb-6 text-blue-700" id="form-title">Neue Münze hinzufügen</h2>
-                <form id="coin-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                    <!-- Linke Spalte: Metadaten -->
-                    <div class="space-y-4">
-                        <input type="hidden" id="coin-doc-id">
-                        <label class="block">
-                            <span class="text-gray-700">Nation</span>
-                            <input type="text" id="nation" placeholder="Deutschland, USA, etc." required class="mt-1 w-full p-3 border border-gray-300 rounded-lg">
-                        </label>
-                        <label class="block">
-                            <span class="text-gray-700">Jahr</span>
-                            <input type="number" id="year" placeholder="1974" required class="mt-1 w-full p-3 border border-gray-300 rounded-lg">
-                        </label>
-                        <label class="block">
-                            <span class="text-gray-700">Nennwert</span>
-                            <input type="text" id="nennwert" placeholder="5 Deutsche Mark, 1 Dollar" required class="mt-1 w-full p-3 border border-gray-300 rounded-lg">
-                        </label>
-                        <label class="block">
-                            <span class="text-gray-700">Prägestelle</span>
-                            <input type="text" id="praegestelle" placeholder="J, D, P (falls bekannt)" class="mt-1 w-full p-3 border border-gray-300 rounded-lg">
-                        </label>
-                        <label class="block">
-                            <span class="text-gray-700">Sonstiges / Erhaltung</span>
-                            <input type="text" id="sonstiges" placeholder="Polierte Platte, Stempelglanz" class="mt-1 w-full p-3 border border-gray-300 rounded-lg">
-                        </label>
-                    </div>
-
-                    <!-- Rechte Spalte: Beschreibung & Fotos -->
-                    <div class="space-y-4">
-                        <label class="block">
-                            <span class="text-gray-700">Beschreibung</span>
-                            <textarea id="beschreibung" placeholder="Detaillierte Beschreibung der Münze und des Motivs..." rows="4" required class="mt-1 w-full p-3 border border-gray-300 rounded-lg resize-none"></textarea>
-                        </label>
-                        <label class="block">
-                            <span class="text-gray-700 font-medium">Foto (Vorderseite)</span>
-                            <input type="file" id="foto-vorderseite" accept="image/*" class="mt-1 w-full text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                        </label>
-                        <label class="block">
-                            <span class="text-gray-700 font-medium">Foto (Rückseite)</span>
-                            <input type="file" id="foto-rueckseite" accept="image/*" class="mt-1 w-full text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                        </label>
-
-                        <div id="image-preview" class="flex space-x-2 mt-4">
-                            <img id="preview-vorder" src="https://placehold.co/100x100/e0f2fe/1e3a8a?text=Vorder" class="w-24 h-24 object-cover rounded-lg border border-gray-200" style="display:none;">
-                            <img id="preview-rueck" src="https://placehold.co/100x100/e0f2fe/1e3a8a?text=Rück" class="w-24 h-24 object-cover rounded-lg border border-gray-200" style="display:none;">
-                        </div>
-
-                    </div>
-                    
-                    <!-- Formular-Aktionen -->
-                    <div class="md:col-span-2 flex space-x-4 pt-4">
-                        <button type="submit" id="save-coin-button" class="flex-1 bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition duration-150 disabled:bg-green-400">Speichern</button>
-                        <button type="button" id="cancel-edit-button" class="bg-gray-300 text-gray-800 p-3 rounded-lg font-bold hover:bg-gray-400 transition duration-150" style="display:none;">Abbrechen</button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- PUBLIC COIN LIST & SEARCH -->
-            <div class="bg-white p-6 md:p-8 rounded-xl card-shadow">
-                <h2 class="text-3xl font-bold mb-6 text-blue-700">Gesamte Münzsammlung</h2>
-                
-                <input type="text" id="coin-search" placeholder="Suche nach Nation, Jahr oder Wert..." class="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-
-                <div id="coin-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Münzkarten werden hier eingefügt -->
-                    <p id="empty-state" class="col-span-full text-center text-gray-500 mt-4">Noch keine Münzen vorhanden.</p>
+                <!-- Linke Spalte: Metadaten -->
+                <div class="space-y-4">
+                    <input type="hidden" id="coin-doc-id">
+                    <label class="block">
+                        <span class="text-gray-700">Nation</span>
+                        <input type="text" id="nation" placeholder="Deutschland, USA, etc." required class="mt-1 w-full p-3 border border-gray-300 rounded-lg">
+                    </label>
+                    <label class="block">
+                        <span class="text-gray-700">Jahr</span>
+                        <input type="number" id="year" placeholder="1974" required class="mt-1 w-full p-3 border border-gray-300 rounded-lg">
+                    </label>
+                    <label class="block">
+                        <span class="text-gray-700">Nennwert</span>
+                        <input type="text" id="nennwert" placeholder="5 Deutsche Mark, 1 Dollar" required class="mt-1 w-full p-3 border border-gray-300 rounded-lg">
+                    </label>
+                    <label class="block">
+                        <span class="text-gray-700">Prägestelle</span>
+                        <input type="text" id="praegestelle" placeholder="J, D, P (falls bekannt)" class="mt-1 w-full p-3 border border-gray-300 rounded-lg">
+                    </label>
+                    <label class="block">
+                        <span class="text-gray-700">Sonstiges / Erhaltung</span>
+                        <input type="text" id="sonstiges" placeholder="Polierte Platte, Stempelglanz" class="mt-1 w-full p-3 border border-gray-300 rounded-lg">
+                    </label>
                 </div>
-            </div>
 
+                <!-- Rechte Spalte: Beschreibung & Fotos -->
+                <div class="space-y-4">
+                    <label class="block">
+                        <span class="text-gray-700">Beschreibung</span>
+                        <textarea id="beschreibung" placeholder="Detaillierte Beschreibung der Münze und des Motivs..." rows="4" required class="mt-1 w-full p-3 border border-gray-300 rounded-lg resize-none"></textarea>
+                    </label>
+                    <label class="block">
+                        <span class="text-gray-700 font-medium">Foto (Vorderseite)</span>
+                        <input type="file" id="foto-vorderseite" accept="image/*" class="mt-1 w-full text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    </label>
+                    <label class="block">
+                        <span class="text-gray-700 font-medium">Foto (Rückseite)</span>
+                        <input type="file" id="foto-rueckseite" accept="image/*" class="mt-1 w-full text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    </label>
+
+                    <div id="image-preview" class="flex space-x-2 mt-4">
+                        <img id="preview-vorder" src="https://placehold.co/100x100/e0f2fe/1e3a8a?text=Vorder" class="w-24 h-24 object-cover rounded-lg border border-gray-200" style="display:none;">
+                        <img id="preview-rueck" src="https://placehold.co/100x100/e0f2fe/1e3a8a?text=Rück" class="w-24 h-24 object-cover rounded-lg border border-gray-200" style="display:none;">
+                    </div>
+
+                </div>
+                
+                <!-- Formular-Aktionen -->
+                <div class="md:col-span-2 flex space-x-4 pt-4">
+                    <button type="submit" id="save-coin-button" class="flex-1 bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition duration-150 disabled:bg-green-400">Speichern</button>
+                    <button type="button" id="cancel-edit-button" class="bg-gray-300 text-gray-800 p-3 rounded-lg font-bold hover:bg-gray-400 transition duration-150" style="display:none;">Abbrechen</button>
+                </div>
+            </form>
         </div>
+
+        <!-- ÖFFENTLICHE COIN LIST & SEARCH (immer sichtbar) -->
+        <div class="bg-white p-6 md:p-8 rounded-xl card-shadow">
+            <h2 class="text-3xl font-bold mb-6 text-blue-700">Gesamte Münzsammlung</h2>
+            
+            <input type="text" id="coin-search" placeholder="Suche nach Nation, Jahr oder Wert..." class="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+
+            <div id="coin-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Münzkarten werden hier eingefügt -->
+                <p id="empty-state" class="col-span-full text-center text-gray-500 mt-4">Noch keine Münzen vorhanden.</p>
+            </div>
+        </div>
+
     </div>
 
     <!-- JavaScript und Firebase Logik -->
@@ -159,7 +164,20 @@
         const storage = getStorage(app);
 
         let currentUserId = null;
+        let publicUserId = null; // UID für öffentliche Münzen-Anzeige
         let allCoinsData = []; // Speichert alle Münzdaten für die Client-Seite Suche
+
+        // Admin-UID aus localStorage holen oder null (wird nach dem ersten Admin-Login gespeichert)
+        const ADMIN_UID_KEY = 'coin_collection_admin_uid';
+        function getPublicUserId() {
+            // Versuche Admin-UID aus localStorage zu holen
+            const storedAdminUid = localStorage.getItem(ADMIN_UID_KEY);
+            if (storedAdminUid) {
+                return storedAdminUid;
+            }
+            // Fallback: Verwende anonyme UID (falls gesetzt)
+            return publicUserId || null;
+        }
 
         // Firestore Pfad-Funktion
         const getCollectionPath = (uid) => `artifacts/${appId}/users/${uid}/muenzsammlung`;
@@ -168,9 +186,12 @@
         const elements = {
             loading: document.getElementById('loading'),
             appStatus: document.getElementById('app-status'),
-            authView: document.getElementById('auth-view'),
-            adminMainView: document.getElementById('admin-main-view'),
+            loginToggleButton: document.getElementById('login-toggle-button'),
+            loginDropdown: document.getElementById('login-dropdown'),
+            adminInfo: document.getElementById('admin-info'),
+            adminPanel: document.getElementById('admin-panel'),
             loginForm: document.getElementById('login-form'),
+            loginSubmitButton: document.getElementById('login-submit-button'),
             logoutButton: document.getElementById('logout-button'),
             userDisplay: document.getElementById('user-display'),
             coinForm: document.getElementById('coin-form'),
@@ -184,6 +205,7 @@
             fotoRueck: document.getElementById('foto-rueckseite'),
             previewVorder: document.getElementById('preview-vorder'),
             previewRueck: document.getElementById('preview-rueck'),
+            coinDocId: document.getElementById('coin-doc-id'),
         };
 
         // 3. Hilfsfunktionen
@@ -224,46 +246,89 @@
 
         // 4. Authentifizierung (Admin-Zugriff)
 
+        // Login-Dropdown Toggle
+        elements.loginToggleButton.addEventListener('click', () => {
+            const isVisible = elements.loginDropdown.style.display !== 'none';
+            elements.loginDropdown.style.display = isVisible ? 'none' : 'block';
+        });
+
+        // Schließe Login-Dropdown wenn außerhalb geklickt wird
+        document.addEventListener('click', (e) => {
+            if (!elements.loginToggleButton.contains(e.target) && 
+                !elements.loginDropdown.contains(e.target)) {
+                elements.loginDropdown.style.display = 'none';
+            }
+        });
+
         async function attemptSignIn() {
             try {
+                // Prüfe, ob eine Admin-UID in localStorage gespeichert ist
+                const storedAdminUid = localStorage.getItem(ADMIN_UID_KEY);
+                
                 if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
+                    const userCredential = await signInWithCustomToken(auth, initialAuthToken);
+                    publicUserId = userCredential.user.uid;
+                    // Speichere Admin-UID für öffentliche Ansicht
+                    if (!userCredential.user.isAnonymous) {
+                        localStorage.setItem(ADMIN_UID_KEY, userCredential.user.uid);
+                    }
                     elements.appStatus.textContent = 'Bereit.';
                 } else {
-                    await signInAnonymously(auth);
-                    elements.appStatus.textContent = 'Anonym angemeldet. Für den Admin-Zugriff bitte einloggen.';
+                    const userCredential = await signInAnonymously(auth);
+                    publicUserId = userCredential.user.uid;
+                    elements.appStatus.textContent = 'Öffentliche Ansicht.';
+                }
+                
+                // Lade Münzen mit der richtigen UID (Admin-UID falls vorhanden, sonst anonyme UID)
+                const uidToLoad = storedAdminUid || publicUserId;
+                if (uidToLoad) {
+                    loadCoins(uidToLoad);
                 }
             } catch (error) {
                 console.error("Initial sign-in failed:", error);
-                elements.appStatus.textContent = 'Fehler beim Anmelden.';
+                elements.appStatus.textContent = 'Fehler beim Laden.';
             }
         }
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                currentUserId = user.uid;
-                // Überprüfen, ob es sich um einen temporären anonymen oder einen echten Admin-Nutzer handelt
                 if (user.isAnonymous) {
-                     // Zeigt die Admin-Ansicht (für die Coin List), aber das Login-Formular (für den Admin-Modus)
-                    elements.adminMainView.style.display = 'block';
-                    elements.authView.style.display = 'block';
-                    elements.userDisplay.textContent = 'Anonym';
-                    loadCoins(user.uid);
+                    // Anonym angemeldet - öffentliche Ansicht
+                    publicUserId = user.uid;
+                    currentUserId = null;
+                    elements.loginToggleButton.style.display = 'block';
+                    elements.adminInfo.style.display = 'none';
+                    elements.adminPanel.style.display = 'none';
+                    elements.appStatus.textContent = 'Öffentliche Ansicht.';
+                    // Lade Münzen mit gespeicherter Admin-UID oder anonyme UID
+                    const uidToLoad = getPublicUserId() || publicUserId;
+                    if (uidToLoad) {
+                        loadCoins(uidToLoad);
+                    }
                 } else {
                     // Echter Admin (E-Mail/Passwort)
-                    elements.authView.style.display = 'none';
-                    elements.adminMainView.style.display = 'block';
+                    currentUserId = user.uid;
+                    publicUserId = user.uid;
+                    // Speichere Admin-UID für öffentliche Ansicht
+                    localStorage.setItem(ADMIN_UID_KEY, user.uid);
+                    elements.loginToggleButton.style.display = 'none';
+                    elements.loginDropdown.style.display = 'none';
+                    elements.adminInfo.style.display = 'flex';
+                    elements.adminPanel.style.display = 'block';
                     elements.userDisplay.textContent = user.email || user.uid;
+                    elements.appStatus.textContent = 'Admin-Modus aktiv.';
+                    // Lade Münzen mit Admin-UID
                     loadCoins(user.uid);
                 }
             } else {
+                // Nicht angemeldet - sollte normalerweise nicht passieren, da wir anonym anmelden
                 currentUserId = null;
-                elements.authView.style.display = 'block';
-                elements.adminMainView.style.display = 'none';
-                elements.coinList.innerHTML = `<p class="col-span-full text-center text-gray-500 mt-4">Bitte melden Sie sich an, um die Münzen zu verwalten.</p>`;
-                allCoinsData = [];
-                // Bei Logout leere Liste anzeigen
-                elements.emptyState.style.display = 'block'; 
+                elements.loginToggleButton.style.display = 'block';
+                elements.adminInfo.style.display = 'none';
+                elements.adminPanel.style.display = 'none';
+                elements.loginDropdown.style.display = 'none';
+                // Versuche erneut anonym anzumelden
+                attemptSignIn();
             }
         });
 
@@ -273,8 +338,8 @@
             const password = document.getElementById('login-password').value;
 
             try {
-                elements.saveButton.disabled = true;
-                elements.saveButton.textContent = 'Anmelden...';
+                elements.loginSubmitButton.disabled = true;
+                elements.loginSubmitButton.textContent = 'Anmelden...';
                 await signInWithEmailAndPassword(auth, email, password);
                 showMessage('Erfolgreich als Admin angemeldet!', 'success');
                 // UI wird durch onAuthStateChanged aktualisiert
@@ -282,8 +347,8 @@
                 console.error("Login Error:", error);
                 showMessage(`Fehler beim Login: ${error.message}`, 'error');
             } finally {
-                elements.saveButton.disabled = false;
-                elements.saveButton.textContent = 'Speichern';
+                elements.loginSubmitButton.disabled = false;
+                elements.loginSubmitButton.textContent = 'Anmelden';
             }
         });
 
@@ -291,6 +356,20 @@
             try {
                 await signOut(auth);
                 showMessage('Erfolgreich abgemeldet.', 'success');
+                // Nach dem Logout: anonym anmelden für öffentliche Ansicht
+                setTimeout(async () => {
+                    try {
+                        const userCredential = await signInAnonymously(auth);
+                        publicUserId = userCredential.user.uid;
+                        // Lade Münzen mit gespeicherter Admin-UID oder anonyme UID
+                        const uidToLoad = getPublicUserId() || publicUserId;
+                        if (uidToLoad) {
+                            loadCoins(uidToLoad);
+                        }
+                    } catch (error) {
+                        console.error("Anonymous sign-in after logout failed:", error);
+                    }
+                }, 500);
                 // UI wird durch onAuthStateChanged aktualisiert
             } catch (error) {
                 console.error("Logout Error:", error);
@@ -325,7 +404,7 @@
             elements.saveButton.textContent = 'Speichere Daten...';
 
             try {
-                const isEditing = elements.coinDocId.value;
+                const isEditing = document.getElementById('coin-doc-id').value;
                 const coinId = isEditing || crypto.randomUUID();
 
                 let formData = {
